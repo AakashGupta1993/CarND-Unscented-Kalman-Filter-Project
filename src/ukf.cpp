@@ -18,8 +18,7 @@ UKF::UKF() {
   // if this is false, radar measurements will be ignored (except during init)
   use_radar_ = true;
 
-  // initial state vector
-  x_ = VectorXd(5);
+  is_initialized_ = false;
 
   // initial covariance matrix
   P_ = MatrixXd(5, 5);
@@ -54,6 +53,26 @@ UKF::UKF() {
 
   Hint: one or more values initialized above might be wildly off...
   */
+   
+  
+  ///* predicted sigma points matrix
+  MatrixXd Xsig_pred_;
+
+  ///* time when the state is true, in us
+  time_us_ = 0;
+  
+  
+  ///* Weights of sigma points
+  VectorXd weights_;
+
+  ///* State dimension
+  n_x_ = 5;
+
+  ///* Augmented state dimension
+  n_aug_ =7;
+
+  ///* Sigma point spreading parameter
+  lambda_ = 3 - n_aug;
 }
 
 UKF::~UKF() {}
@@ -69,6 +88,62 @@ void UKF::ProcessMeasurement(MeasurementPackage meas_package) {
   Complete this function! Make sure you switch between lidar and radar
   measurements.
   */
+  
+  if (!is_initialized_) {
+
+	// initial state vector
+	x_ = VectorXd(5);
+	x_ = << 1, 1, 1, 1, 1;
+	
+  if (measurement_pack.sensor_type_ == MeasurementPackage::RADAR) {
+		float rho = measurement_pack.raw_measurements_[0];
+		float theta = measurement_pack.raw_measurements_[1];
+		float rho_dot = measurement_pack.raw_measurements_[2];
+    
+    x_ << rho*cos(theta), rho*sin(theta), 0, theta, 0;
+  }
+  else if (measurement_pack.sensor_type_ == MeasurementPackage::LASER) {
+    x_ << measurement_pack.raw_measurements_[0], measurement_pack.raw_measurements_[1], 0, 0, 0;
+  }
+  
+  
+  
+  //P_ << MatrixXd::Identity(5, 5);
+  P_ << 0.0225, 0, 0, 0, 0,
+        0, 0.0225, 0, 0, 0,
+        0, 0, 0.0225, 0, 0,
+        0, 0, 0, 0.0225, 0,
+        0, 0, 0, 0, 0.0225;
+  
+  
+
+  time_us_ = measurement_pack.timestamp_;
+	
+  // done initializing, no need to predict or update
+  is_initialized_ = true;
+  return;
+  }
+  
+  float delta_t = (measurement_pack.timestamp_ - time_us_) / 1000000.0;	//dt - expressed in seconds
+	previous_timestamp_ = measurement_pack.timestamp_;
+  
+  
+  
+  Prediction(delta_t);
+  
+  if (measurement_pack.sensor_type_ == MeasurementPackage::RADAR) {
+    // Radar updates
+    R_ = R_radar_;
+    UpdateRadar(measurement_pack.raw_measurements_);
+  } else {
+    // Laser updates
+    R_ = R_laser_;
+    UpdateLidar(measurement_pack.raw_measurements_);
+  }
+
+  // print the output
+  cout << "x_ = " << x_ << endl;
+  cout << "P_ = " << P_ << endl;
 }
 
 /**
@@ -83,6 +158,12 @@ void UKF::Prediction(double delta_t) {
   Complete this function! Estimate the object's location. Modify the state
   vector, x_. Predict sigma points, the state, and the state covariance matrix.
   */
+  
+  
+  
+  
+  
+  
 }
 
 /**
